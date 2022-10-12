@@ -12,9 +12,22 @@ protocol CoreDataManagerProtocol {
     var persistentContainer: NSPersistentContainer { get }
     var context: NSManagedObjectContext { get }
     
+    /// CoreData에 영상들의 MetaData 목록을 요청합니다.
+    /// - Parameter start: MetaData 목록의 시작 Index입니다.
+    /// - Returns: 시작 Index로부터 최대 6개의 VideoMetaData 목록을 반환합니다.
     func fetchVideoMetaData(start: Int) throws -> [VideoMetaData]
+    
+    /// CoreData와 상호작용할 수 있는 VideoMetaData 객체를 요청합니다.
+    /// 함수의 호출에 사용되는 Parameter들은 생성되는 VideoMetaData의 초기값으로 설정됩니다.
+    /// - Returns: 새롭게 생성된 VideoMetaData 객체를 반환합니다.
     func createNewVideoMetaData(name: String, createdAt: Date, videoPath: URL, thumbnail: Data, videoLength: Double) throws -> VideoMetaData
+    
+    /// CoreData에 새 레코드 생성을 요청합니다.
+    /// - Parameter data: 레코드에 삽입될 VideoMetaData 객체입니다.
     func insertVideoMetaData(_ data: VideoMetaData) throws
+    
+    /// CoreData에서 특정 레코드의 삭제를 요청합니다.
+    /// - Parameter data: 삭제할 VideoMetaData 객체입니다.
     func deleteVideoMetaData(_ data: VideoMetaData) throws
 }
 

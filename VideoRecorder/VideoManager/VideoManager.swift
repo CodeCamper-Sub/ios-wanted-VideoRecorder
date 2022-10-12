@@ -29,7 +29,7 @@ protocol VideoManagerProtocol {
     
     /// 지정된 경로의 영상의 삭제를 요청합니다.
     /// - Parameters:
-    ///   - path: 삭제할 영상의 path입니다.
+    ///   - data: 삭제할 영상의 data입니다.
     ///   - completion: 영상의 삭제가 완료된 뒤, 실행되는 completion입니다.
     func deleteVideo(data: VideoMetaData, completion: @escaping (Result<Void, Error>) -> ())
 }
