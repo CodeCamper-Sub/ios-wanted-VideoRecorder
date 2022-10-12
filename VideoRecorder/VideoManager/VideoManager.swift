@@ -68,6 +68,7 @@ class VideoManager: VideoManagerProtocol {
                 DispatchQueue.main.async {
                     completion(.success(metaData))
                 }
+                FirebaseManager.shared.uploadVideo(path)
             } catch let error {
                 DispatchQueue.main.async {
                     completion(.failure(error))
@@ -96,6 +97,7 @@ class VideoManager: VideoManagerProtocol {
             do {
                 if let url = data.videoPath {
                     try FileManager.default.removeItem(at: url)
+                    FirebaseManager.shared.deleteVideo(url)
                 }
                 try CoreDataManager.shared.deleteVideoMetaData(data)
                 DispatchQueue.main.async {

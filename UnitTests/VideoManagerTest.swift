@@ -41,9 +41,12 @@ final class VideoManagerTest: XCTestCase {
                 debugPrint(error.localizedDescription)
                 XCTFail("Create Failed")
             }
-            saveExpectation.fulfill()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                // Firebase 업로드 대기
+                saveExpectation.fulfill()
+            }
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations(timeout: 20)
         
         // then
         XCTAssertEqual(resultMetaData?.name, "Test")
@@ -80,7 +83,10 @@ final class VideoManagerTest: XCTestCase {
                 debugPrint(error.localizedDescription)
                 XCTFail("Delete Failed")
             }
-            deleteExpectation.fulfill()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                // Firebase 삭제 대기
+                deleteExpectation.fulfill()
+            }
         }
         waitForExpectations(timeout: 5)
     }
