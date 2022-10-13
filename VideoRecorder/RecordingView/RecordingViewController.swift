@@ -17,7 +17,7 @@ class RecordingViewController: UIViewController {
     var outputURL: URL?
 
     var recodeBool = Bool()
-    var timer: Timer?
+    var timer = Timer()
     var time = 0
 
     let recordingView: RecordingView = {
@@ -34,7 +34,7 @@ class RecordingViewController: UIViewController {
         addSubView()
         configure()
         
-        recodeBool = false
+        recodeBool = true
         recordingView.cencelButton.addTarget(self, action: #selector(cencelButtonPressed), for: .touchUpInside)
         recordingView.rotateButton.addTarget(self, action: #selector(switchCamera), for: .touchUpInside)
         recordingView.recordingButton.addTarget(self, action: #selector(recordingVideo), for: .touchUpInside)
@@ -49,11 +49,6 @@ class RecordingViewController: UIViewController {
         guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
               captureSession.canAddInput(videoInput) else { return }
         captureSession.addInput(videoInput)
-        
-//        audioDevice = AVCaptureDevice.default(for: AVMediaType.audio)
-//        guard let audioDeviceInput = try? AVCaptureDeviceInput(device: audioDevice),
-//                captureSession.canAddInput(audioDeviceInput) else { return }
-//        captureSession.addInput(audioDeviceInput)
         
         self.videoOutput = AVCaptureMovieFileOutput()
         guard let videoOutput = self.videoOutput else { return }
@@ -90,40 +85,42 @@ class RecordingViewController: UIViewController {
     }
     
     @objc func recordingVideo() {
-        recodeBool = !recodeBool
-        print(recodeBool)
         if recodeBool == true {
             recordingStart()
+            videoTimerStart()
+            recordingView.rotateButton.isEnabled = false
         } else {
             recordingStop()
+            videoTimerStop()
+            recordingView.rotateButton.isEnabled = true
         }
+        recodeBool = !recodeBool
     }
     
+    // Recording Start
     func recordingStart() {
-        videoTimerStart()
         outputURL = tempURL()
 
         print("outputURL = \(outputURL!)")
         videoOutput.startRecording(to: outputURL!, recordingDelegate: self)
-        //(file:///private/var/mobile/Containers/Data/Application/3219AFC7-7B44-4260-B104-CF6269F19425/tmp/32221888-C410-4AD0-9AC0-0B95DF15EEC5.mp4)
     }
     
     func recordingStop() {
         if videoOutput.isRecording {
-            videoTimerStop()
             videoOutput.stopRecording()
         }
     }
     
+    // Timer Start
     func videoTimerStart() {
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] timer in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] timer in
             self.time += 1
             recordingView.timeLabel.text = timeString(from: TimeInterval(time))
         }
     }
     
     func videoTimerStop() {
-        timer?.invalidate()
+        timer.invalidate()
         time = 0
         recordingView.timeLabel.text = "00:00"
     }
