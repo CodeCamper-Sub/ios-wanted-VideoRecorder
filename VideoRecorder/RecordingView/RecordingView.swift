@@ -25,11 +25,11 @@ class RecordingView: UIView {
         return view
     }()
     
-    let thumbnailImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "image")
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
+    let thumbnailButton: UIButton = {
+        let button = UIButton(type: UIButton.ButtonType.system)
+        button.setImage(UIImage(named: "image"), for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
     
     let recordingButton: UIButton = {
@@ -41,8 +41,18 @@ class RecordingView: UIView {
     
     let timeLabel: UILabel = {
         let label = UILabel()
+        label.text = "00:00"
+        label.textColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    let recordStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = 5
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
     }()
     
     let rotateButton: UIButton = {
@@ -55,6 +65,10 @@ class RecordingView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
+        [recordingButton, timeLabel].forEach {
+            self.recordStackView.addArrangedSubview($0)
+        }
+        
         addView()
         configure()
     }
@@ -66,9 +80,10 @@ class RecordingView: UIView {
     func addView() {
         addSubview(cencelButton)
         addSubview(cameraSetView)
-        cameraSetView.addSubview(thumbnailImageView)
-        cameraSetView.addSubview(recordingButton)
-        cameraSetView.addSubview(timeLabel)
+        cameraSetView.addSubview(thumbnailButton)
+//        cameraSetView.addSubview(recordingButton)
+//        cameraSetView.addSubview(timeLabel)
+        cameraSetView.addSubview(recordStackView)
         cameraSetView.addSubview(rotateButton)
     }
     
@@ -83,19 +98,20 @@ class RecordingView: UIView {
             cameraSetView.widthAnchor.constraint(equalToConstant: 300),
             cameraSetView.heightAnchor.constraint(equalToConstant: 100),
             
-            thumbnailImageView.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
-            thumbnailImageView.leadingAnchor.constraint(equalTo: cameraSetView.leadingAnchor, constant: 20),
-            thumbnailImageView.widthAnchor.constraint(equalToConstant: 50),
-            thumbnailImageView.heightAnchor.constraint(equalToConstant: 50),
-
-            recordingButton.centerXAnchor.constraint(equalTo: cameraSetView.centerXAnchor),
-            recordingButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
+            thumbnailButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
+            thumbnailButton.leadingAnchor.constraint(equalTo: cameraSetView.leadingAnchor, constant: 20),
+            thumbnailButton.widthAnchor.constraint(equalToConstant: 50),
+            thumbnailButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            recordStackView.centerXAnchor.constraint(equalTo: cameraSetView.centerXAnchor),
+            recordStackView.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
+//            recordingButton.centerXAnchor.constraint(equalTo: cameraSetView.centerXAnchor),
+//            recordingButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
+//
+//            timeLabel.topAnchor.constraint(equalTo: recordingButton.bottomAnchor, constant: 10),
             
             rotateButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
             rotateButton.trailingAnchor.constraint(equalTo: cameraSetView.trailingAnchor, constant: -20)
-            
-            
-            
             
         ])
     }

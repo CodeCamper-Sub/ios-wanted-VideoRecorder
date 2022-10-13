@@ -10,9 +10,15 @@ import AVFoundation
 
 class RecordingViewController: UIViewController {
     
-    private lazy var captureDevice = AVCaptureDevice.default(for: .video)
-    private var session: AVCaptureSession?
-    private var output = AVCapturePhotoOutput()
+    let captureSession = AVCaptureSession()
+    var videoDevice: AVCaptureDevice!
+    var audioDevice: AVCaptureDevice!
+    var videoOutput: AVCaptureMovieFileOutput!
+    var outputURL: URL?
+
+    var recodeBool = Bool()
+    var timer: Timer?
+    var time = 0
 
     let recordingView: RecordingView = {
        let view = RecordingView()
@@ -24,52 +30,119 @@ class RecordingViewController: UIViewController {
         super.viewDidLoad()
         
         settingCamera()
- 
-        view.backgroundColor = .white
+
         addSubView()
         configure()
         
+        recodeBool = false
         recordingView.cencelButton.addTarget(self, action: #selector(cencelButtonPressed), for: .touchUpInside)
         recordingView.rotateButton.addTarget(self, action: #selector(switchCamera), for: .touchUpInside)
+        recordingView.recordingButton.addTarget(self, action: #selector(recordingVideo), for: .touchUpInside)
     }
     
     func settingCamera() {
-        guard let captureDevice = captureDevice else { return }
         
-        do {
-            let input = try AVCaptureDeviceInput(device: captureDevice)
-            session = AVCaptureSession()
-            session?.sessionPreset = .photo
-            session?.addInput(input)
-            session?.addOutput(output)
-        } catch {
-            print(error)
-        }
-        guard let session = session else { return }
+        captureSession.sessionPreset = .high
+        captureSession.beginConfiguration()
         
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        videoDevice = bestDevice(in: .back)
+        guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+              captureSession.canAddInput(videoInput) else { return }
+        captureSession.addInput(videoInput)
+        
+//        audioDevice = AVCaptureDevice.default(for: AVMediaType.audio)
+//        guard let audioDeviceInput = try? AVCaptureDeviceInput(device: audioDevice),
+//                captureSession.canAddInput(audioDeviceInput) else { return }
+//        captureSession.addInput(audioDeviceInput)
+        
+        self.videoOutput = AVCaptureMovieFileOutput()
+        guard let videoOutput = self.videoOutput else { return }
+        guard self.captureSession.canAddOutput(videoOutput) else { return }
+        self.captureSession.addOutput(videoOutput)
+        
+        captureSession.commitConfiguration()
+
+        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer.videoGravity = .resizeAspectFill
         previewLayer.frame = self.view.frame
         self.view.layer.addSublayer(previewLayer)
-        
-        DispatchQueue.global().async {
-            session.startRunning()
+
+        DispatchQueue.global(qos: .background).async {
+            self.captureSession.startRunning()
         }
+    }
+    
+    private func bestDevice(in position: AVCaptureDevice.Position) -> AVCaptureDevice {
+        let discoverySession = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInTrueDepthCamera, .builtInDualCamera, .builtInWideAngleCamera],
+            mediaType: .video,
+            position: .unspecified
+        )
+        
+        let devices = discoverySession.devices
+        guard !devices.isEmpty else { fatalError("Missing capture devices.")}
+        
+        return devices.first(where: { device in device.position == position })!
     }
     
     @objc func cencelButtonPressed() {
         self.dismiss(animated: true)
     }
     
+    @objc func recordingVideo() {
+        recodeBool = !recodeBool
+        print(recodeBool)
+        if recodeBool == true {
+            recordingStart()
+        } else {
+            recordingStop()
+        }
+    }
+    
+    func recordingStart() {
+        videoTimerStart()
+        outputURL = tempURL()
+
+        print("outputURL = \(outputURL!)")
+        videoOutput.startRecording(to: outputURL!, recordingDelegate: self)
+        //(file:///private/var/mobile/Containers/Data/Application/3219AFC7-7B44-4260-B104-CF6269F19425/tmp/32221888-C410-4AD0-9AC0-0B95DF15EEC5.mp4)
+    }
+    
+    func recordingStop() {
+        if videoOutput.isRecording {
+            videoTimerStop()
+            videoOutput.stopRecording()
+        }
+    }
+    
+    func videoTimerStart() {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] timer in
+            self.time += 1
+            recordingView.timeLabel.text = timeString(from: TimeInterval(time))
+        }
+    }
+    
+    func videoTimerStop() {
+        timer?.invalidate()
+        time = 0
+        recordingView.timeLabel.text = "00:00"
+    }
+    
+    func timeString(from timeInterval: TimeInterval) -> String {
+        let seconds = Int(timeInterval.truncatingRemainder(dividingBy: 60))
+        let minutes = Int(timeInterval.truncatingRemainder(dividingBy: 60 * 60) / 60)
+        return String(format: "%.2d:%.2d", minutes, seconds)
+    }
+    
     //카메라 방향 전환
     @objc func switchCamera() {
-        session?.beginConfiguration()
-        let currentInput = session?.inputs.first as? AVCaptureDeviceInput
-        session?.removeInput(currentInput!)
+        captureSession.beginConfiguration()
+        let currentInput = captureSession.inputs.first as? AVCaptureDeviceInput
+        captureSession.removeInput(currentInput!)
         let newCameraDevice = currentInput?.device.position == .back ? getCamera(with: .front) : getCamera(with: .back)
         let newVideoInput = try? AVCaptureDeviceInput(device: newCameraDevice!)
-        session?.addInput(newVideoInput!)
-        session?.commitConfiguration()
+        captureSession.addInput(newVideoInput!)
+        captureSession.commitConfiguration()
     }
 
     func getCamera(with position: AVCaptureDevice.Position) -> AVCaptureDevice? {
@@ -80,6 +153,17 @@ class RecordingViewController: UIViewController {
         return devices.filter {
             $0.position == position
             }.first
+    }
+    
+    func tempURL() -> URL? {
+        let directory = NSTemporaryDirectory() as NSString
+
+        if directory != "" {
+            let path = directory.appendingPathComponent(NSUUID().uuidString + ".mp4")
+            return URL(fileURLWithPath: path)
+        }
+
+        return nil
     }
     
     func addSubView() {
@@ -94,8 +178,23 @@ class RecordingViewController: UIViewController {
             recordingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-    
-
 }
 
-
+extension RecordingViewController: AVCaptureFileOutputRecordingDelegate {
+    
+    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        if (error != nil) {
+            print("Error recording movie: \(error!.localizedDescription)")
+        } else {
+            let videoURL = outputURL! as URL
+            DispatchQueue.global(qos: .background).async {
+                VideoManager.shared.saveVideo(name: "VideoName", path: videoURL) { _ in
+                }
+//                FirebaseManager.shared.uploadVideo(videoURL)
+            }
+            //로컬에 저장
+            UISaveVideoAtPathToSavedPhotosAlbum(videoURL.path, nil, nil, nil)
+        }
+    }
+    
+}

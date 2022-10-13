@@ -37,12 +37,6 @@ class ViewController: UIViewController {
         let nextVC = RecordingViewController()
         nextVC.modalPresentationStyle = .fullScreen
         present(nextVC, animated: false)
-        
-//        let videoPicker = UIImagePickerController()
-//        videoPicker.delegate = self
-//        videoPicker.sourceType = .camera
-//        videoPicker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .camera) ?? []
-//        self.present(videoPicker, animated: true, completion: nil)
     }
     
     func addSubView() {
@@ -63,8 +57,4 @@ class ViewController: UIViewController {
             videoListView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-}
-
-extension ViewController: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
-    
 }
