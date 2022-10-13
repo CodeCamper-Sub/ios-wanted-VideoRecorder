@@ -19,6 +19,6 @@ class SliderViewModelTests: XCTestCase {
     }
     
     func testAction() {
-        viewModel.action.send(.hello)
+        
     }
 }

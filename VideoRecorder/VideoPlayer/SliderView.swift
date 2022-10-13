@@ -48,7 +48,7 @@ class SliderView: UIView {
     
     // MARK: Properties
     var didSetupConstraints = false
-    var viewModel: ViewModel
+    var viewModel: ViewModel { didSet { bind() } }
     var subscriptions = [AnyCancellable]()
     
     // MARK: Life Cycle
@@ -126,6 +126,7 @@ class SliderView: UIView {
             .merge(with: self.gesture(.tap))
             .map { $0.location(in: self).x }
             .map { $0 / self.frame.width }
+            .map { min(max(0, $0), 1) }
             .map { ViewModel.Action.updateProgress($0) }
             .subscribe(viewModel.action)
             .store(in: &subscriptions)

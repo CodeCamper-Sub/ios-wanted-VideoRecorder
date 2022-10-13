@@ -67,7 +67,7 @@ class VideoPlayerControlView: UIView {
     
     // MARK: Properties
     var didSetupConstraints = false
-    var viewModel: ViewModel
+    var viewModel: ViewModel { didSet { bind() } }
     var subscriptions = [AnyCancellable]()
     
     // MARK: Life Cycle
@@ -120,6 +120,7 @@ class VideoPlayerControlView: UIView {
             sliderView.topAnchor.constraint(equalTo: topAnchor, constant: 26),
             sliderView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
             sliderView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
+            sliderView.heightAnchor.constraint(equalToConstant: 10),
         ]
         
         constraints += [
