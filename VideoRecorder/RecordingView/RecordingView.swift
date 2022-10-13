@@ -12,6 +12,7 @@ class RecordingView: UIView {
     let cencelButton: UIButton = {
         let button = UIButton(type: UIButton.ButtonType.system)
         button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.tintColor = .gray
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -73,8 +74,8 @@ class RecordingView: UIView {
     
     func configure() {
         NSLayoutConstraint.activate([
-            cencelButton.centerXAnchor.constraint(equalTo: centerXAnchor),
-            cencelButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            cencelButton.topAnchor.constraint(equalTo: topAnchor, constant: 60),
+            cencelButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             
             cameraSetView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             cameraSetView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
