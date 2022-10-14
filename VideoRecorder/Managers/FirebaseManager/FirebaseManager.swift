@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseStorage
+import Combine
 
 protocol FirebaseManagerProtocol {
     /// Firebase Storage에 영상의 업로드를 요청합니다.
@@ -25,7 +26,7 @@ protocol FirebaseManagerProtocol {
     /// - Parameters:
     ///   - url: 영상이 저장될 로컬 URL입니다.
     ///   - completion: 영상 다운로드가 완료된 후, 실행되는 completion입니다.
-    func getVideo(_ url: URL, completion: @escaping (Result<URL, Error>) -> ())
+    func getVideoIfNeeded(_ url: URL, completion: @escaping (Result<URL, Error>) -> ())
 }
 
 class FirebaseManager: FirebaseManagerProtocol {
@@ -59,15 +60,19 @@ class FirebaseManager: FirebaseManagerProtocol {
         }
     }
     
-    func getVideo(_ url: URL, completion: @escaping (Result<URL, Error>) -> ()) {
+    func getVideoIfNeeded(_ url: URL, completion: @escaping (Result<URL, Error>) -> ()) {
+        if FileManager.default.fileExists(atPath: url.relativePath) {
+            completion(.success(url))
+            return
+        }
         DispatchQueue.global().async {
             let fileRef = self.storage.reference().child(url.lastPathComponent)
-            fileRef.write(toFile: url, completion: { url, error in
+            fileRef.write(toFile: url, completion: { firebaseUrl, error in
                 if let error = error {
                     DispatchQueue.main.async {
                         completion(.failure(error))
                     }
-                } else if let url = url {
+                } else if firebaseUrl != nil {
                     DispatchQueue.main.async {
                         completion(.success(url))
                     }
@@ -78,6 +83,18 @@ class FirebaseManager: FirebaseManagerProtocol {
                 }
             })
         }
+    }
+}
+
+
+// MARK: Combine Extension
+extension FirebaseManager {
+    func getVideoIfNeeded(_ url: URL) -> AnyPublisher<URL, Error> {
+        return Future { promise in
+            self.getVideoIfNeeded(url) { result in
+                promise(result)
+            }
+        }.eraseToAnyPublisher()
     }
 }
 
