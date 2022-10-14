@@ -7,6 +7,7 @@
 
 import UIKit
 import AVFoundation
+import Photos
 
 class RecordingViewController: UIViewController {
     
@@ -28,6 +29,8 @@ class RecordingViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        getAlbumThumbnailImage()
         
         settingCamera()
 
@@ -152,6 +155,32 @@ class RecordingViewController: UIViewController {
             }.first
     }
     
+    class ImageManager {
+        static let shared = ImageManager()
+        private let imageManager = PHImageManager()
+        
+        func requestImage(from asset: PHAsset, thumnailSize: CGSize, completion: @escaping (UIImage?) -> Void) {
+            self.imageManager.requestImage(for: asset, targetSize: thumnailSize, contentMode: .aspectFill, options: nil) { image, info in
+                completion(image)
+            }
+        }
+    }
+    func getAlbumThumbnailImage() {
+        let fetchOption = PHFetchOptions()
+        fetchOption.fetchLimit = 1
+        fetchOption.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        let fetchPhotos = PHAsset.fetchAssets(with: fetchOption)
+        if let photo = fetchPhotos.firstObject {
+            DispatchQueue.main.async {
+                ImageManager.shared.requestImage(from: photo, thumnailSize: self.recordingView.thumbnailButton.frame.size) { image in
+                    self.recordingView.thumbnailButton.setImage(image, for: .normal)
+                }
+            }
+        } else {
+            self.recordingView.thumbnailButton.setImage(UIImage(named: "image"), for: .normal)
+        }
+    }
+    
     func tempURL() -> URL? {
         let directory = NSTemporaryDirectory() as NSString
 
@@ -184,14 +213,25 @@ extension RecordingViewController: AVCaptureFileOutputRecordingDelegate {
             print("Error recording movie: \(error!.localizedDescription)")
         } else {
             let videoURL = outputURL! as URL
-            DispatchQueue.global(qos: .background).async {
-                VideoManager.shared.saveVideo(name: "VideoName", path: videoURL) { _ in
+            var resultMetaData: VideoMetaData?
+            VideoManager.shared.saveVideo(name: "Test", path: videoURL) { result in
+                switch result {
+                case .success(let metaData):
+                    resultMetaData = metaData
+                    print("res: \(String(describing: resultMetaData))")
+                case .failure(let error):
+                    debugPrint(error.localizedDescription)
                 }
-//                FirebaseManager.shared.uploadVideo(videoURL)
             }
             //로컬에 저장
             UISaveVideoAtPathToSavedPhotosAlbum(videoURL.path, nil, nil, nil)
         }
     }
-    
+}
+
+extension RecordingViewController: PHPhotoLibraryChangeObserver {
+    func photoLibraryDidChange(_ changeInstance: PHChange) {
+        // 갤러리 변화를 감지했을 때
+        getAlbumThumbnailImage()
+    }
 }

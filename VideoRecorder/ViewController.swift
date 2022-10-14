@@ -30,7 +30,10 @@ class ViewController: UIViewController {
         
         addSubView()
         configure()
-
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        videoListView.videoListTableView.reloadData()
     }
     
     @objc func recodeButtonPressed() {

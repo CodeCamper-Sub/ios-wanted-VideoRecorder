@@ -35,6 +35,7 @@ protocol CoreDataManagerProtocol {
 class CoreDataManager: CoreDataManagerProtocol {
     // MARK: Singleton
     static let shared = CoreDataManager()
+    var videoMataData = [VideoMetaData]()
     
     private init() { }
     
@@ -68,6 +69,7 @@ class CoreDataManager: CoreDataManagerProtocol {
         metaData.videoPath = videoPath
         metaData.thumbnail = thumbnail
         metaData.videoLength = videoLength
+        videoMataData.insert(metaData, at: 0)
         return metaData
     }
     

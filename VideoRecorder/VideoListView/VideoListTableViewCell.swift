@@ -9,6 +9,13 @@ import UIKit
 
 class VideoListTableViewCell: UITableViewCell {
     
+    let thumbnailView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 15
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     let thumbnailImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.layer.cornerRadius = 20
@@ -20,6 +27,14 @@ class VideoListTableViewCell: UITableViewCell {
         imageView.layer.shadowColor = UIColor.gray.cgColor
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
+    }()
+    
+    let timelabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 12)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
 
     let videoNameLabel: UILabel = {
@@ -58,17 +73,28 @@ class VideoListTableViewCell: UITableViewCell {
      }
     
     func addView() {
-        addSubview(thumbnailImageView)
+        addSubview(thumbnailView)
+        thumbnailView.addSubview(thumbnailImageView)
+        thumbnailView.addSubview(timelabel)
         addSubview(stackView)
     }
     
     func configure() {
         
         NSLayoutConstraint.activate([
-            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            
+            thumbnailView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             thumbnailImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             thumbnailImageView.widthAnchor.constraint(equalToConstant: 80),
             thumbnailImageView.heightAnchor.constraint(equalToConstant: 60),
+            
+            thumbnailImageView.leadingAnchor.constraint(equalTo: thumbnailView.leadingAnchor, constant: 20),
+            thumbnailImageView.centerYAnchor.constraint(equalTo: thumbnailView.centerYAnchor),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: 80),
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: 60),
+            
+            timelabel.leadingAnchor.constraint(equalTo: thumbnailView.leadingAnchor, constant: 30),
+            timelabel.topAnchor.constraint(equalTo: thumbnailView.topAnchor, constant: 10),
             
             stackView.centerYAnchor.constraint(equalTo: centerYAnchor),
             stackView.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 20)

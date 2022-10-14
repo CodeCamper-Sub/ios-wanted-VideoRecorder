@@ -27,7 +27,7 @@ class RecordingView: UIView {
     
     let thumbnailButton: UIButton = {
         let button = UIButton(type: UIButton.ButtonType.system)
-        button.setImage(UIImage(named: "image"), for: .normal)
+//        button.setImage(UIImage(named: "image"), for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -41,7 +41,6 @@ class RecordingView: UIView {
     
     let timeLabel: UILabel = {
         let label = UILabel()
-        label.text = "00:00"
         label.textColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -81,8 +80,6 @@ class RecordingView: UIView {
         addSubview(cencelButton)
         addSubview(cameraSetView)
         cameraSetView.addSubview(thumbnailButton)
-//        cameraSetView.addSubview(recordingButton)
-//        cameraSetView.addSubview(timeLabel)
         cameraSetView.addSubview(recordStackView)
         cameraSetView.addSubview(rotateButton)
     }
@@ -105,11 +102,7 @@ class RecordingView: UIView {
             
             recordStackView.centerXAnchor.constraint(equalTo: cameraSetView.centerXAnchor),
             recordStackView.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
-//            recordingButton.centerXAnchor.constraint(equalTo: cameraSetView.centerXAnchor),
-//            recordingButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
-//
-//            timeLabel.topAnchor.constraint(equalTo: recordingButton.bottomAnchor, constant: 10),
-            
+
             rotateButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
             rotateButton.trailingAnchor.constraint(equalTo: cameraSetView.trailingAnchor, constant: -20)
             
