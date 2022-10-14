@@ -11,6 +11,7 @@ class VideoListView: UIView {
     
     var start: Int = 0
     var isLoadOver = false
+    var isLoading = false
     var videoMataDatas = [VideoMetaData]()
     
     let formatter: DateFormatter = {
@@ -50,12 +51,13 @@ class VideoListView: UIView {
             self.start = 0
             self.isLoadOver = false
         }
-        if isLoadOver { return }
+        if isLoadOver || isLoading { return }
+        isLoading = true
         
         VideoManager.shared.loadVideos(start: self.start) { result in
             switch result {
             case .success(let metaDatas):
-                self.videoMataDatas = metaDatas
+                self.videoMataDatas.append(contentsOf: metaDatas)
                 self.videoListTableView.reloadData()
                 self.start += metaDatas.count
                 if metaDatas.count != 6 {
@@ -66,6 +68,7 @@ class VideoListView: UIView {
             case .failure(let error):
                 print(error.localizedDescription)
             }
+            self.isLoading = false
         }
     }
     
@@ -117,19 +120,18 @@ extension VideoListView: UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-//    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-//        if editingStyle == .delete {
-//            var resultMetaData: VideoMetaData?
-//            VideoManager.shared.de(name: "Test", path: data.videoPath!) { result in
-//                switch result {
-//                case .success(let metaData):
-//                    resultMetaData = metaData
-//                case .failure(let error):
-//                    debugPrint(error.localizedDescription)
-//                }
-//            }
-//            videoListTableView.deleteRows(at: [indexPath], with: .fade)
-//        }
-//    }
+        func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+            if editingStyle == .delete {
+                VideoManager.shared.deleteVideo(data: videoMataDatas[indexPath.row]) { result in
+                    switch result {
+                    case .success:
+                        self.videoMataDatas.remove(at: indexPath.row)
+                        break
+                    case .failure(let error):
+                        print(error.localizedDescription)
+                    }
+                    self.videoListTableView.deleteRows(at: [indexPath], with: .fade)
+            }
+        }
+    }
 }
-

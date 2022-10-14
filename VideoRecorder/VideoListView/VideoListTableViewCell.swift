@@ -11,20 +11,18 @@ class VideoListTableViewCell: UITableViewCell {
     
     let thumbnailView: UIView = {
         let view = UIView()
-        view.layer.cornerRadius = 15
+        view.layer.shadowOffset = CGSize(width: 5, height: 5)
+        view.layer.shadowOpacity = 0.7
+        view.layer.shadowRadius = 5
+        view.layer.shadowColor = UIColor.gray.cgColor
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
     let thumbnailImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.layer.cornerRadius = 20
-        
-        //그림자
-        imageView.layer.shadowOffset = CGSize(width: 5, height: 5)
-        imageView.layer.shadowOpacity = 0.7
-        imageView.layer.shadowRadius = 5
-        imageView.layer.shadowColor = UIColor.gray.cgColor
+        imageView.layer.cornerRadius = 15
+        imageView.clipsToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()

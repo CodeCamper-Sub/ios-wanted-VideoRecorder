@@ -19,22 +19,25 @@ class RecordingView: UIView {
     
     let cameraSetView: UIView = {
         let view = UIView()
-        view.backgroundColor = .black
-        view.alpha = 0.5
+        view.layer.cornerRadius = 15
+        view.backgroundColor = .black.withAlphaComponent(0.5)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
-    let thumbnailButton: UIButton = {
-        let button = UIButton(type: UIButton.ButtonType.system)
-//        button.setImage(UIImage(named: "image"), for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+    let thumbnailImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "image")
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 15
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
     
     let recordingButton: UIButton = {
         let button = UIButton(type: UIButton.ButtonType.system)
         button.setImage(UIImage(systemName: "circle.fill"), for: .normal)
+        button.tintColor = .red
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -57,6 +60,7 @@ class RecordingView: UIView {
     let rotateButton: UIButton = {
         let button = UIButton(type: UIButton.ButtonType.system)
         button.setImage(UIImage(systemName: "camera.rotate"), for: .normal)
+        button.tintColor = .white
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -79,7 +83,7 @@ class RecordingView: UIView {
     func addView() {
         addSubview(cencelButton)
         addSubview(cameraSetView)
-        cameraSetView.addSubview(thumbnailButton)
+        cameraSetView.addSubview(thumbnailImageView)
         cameraSetView.addSubview(recordStackView)
         cameraSetView.addSubview(rotateButton)
     }
@@ -95,10 +99,10 @@ class RecordingView: UIView {
             cameraSetView.widthAnchor.constraint(equalToConstant: 300),
             cameraSetView.heightAnchor.constraint(equalToConstant: 100),
             
-            thumbnailButton.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
-            thumbnailButton.leadingAnchor.constraint(equalTo: cameraSetView.leadingAnchor, constant: 20),
-            thumbnailButton.widthAnchor.constraint(equalToConstant: 50),
-            thumbnailButton.heightAnchor.constraint(equalToConstant: 50),
+            thumbnailImageView.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: cameraSetView.leadingAnchor, constant: 20),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: 50),
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: 50),
             
             recordStackView.centerXAnchor.constraint(equalTo: cameraSetView.centerXAnchor),
             recordStackView.centerYAnchor.constraint(equalTo: cameraSetView.centerYAnchor),

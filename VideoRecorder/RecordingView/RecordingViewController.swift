@@ -30,8 +30,6 @@ class RecordingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        getAlbumThumbnailImage()
-        
         settingCamera()
 
         addSubView()
@@ -102,7 +100,7 @@ class RecordingViewController: UIViewController {
     
     // Recording Start
     func recordingStart() {
-        outputURL = tempURL()
+        outputURL = VideoManager.shared.getVideoURL()
 
         print("outputURL = \(outputURL!)")
         videoOutput.startRecording(to: outputURL!, recordingDelegate: self)
@@ -165,33 +163,7 @@ class RecordingViewController: UIViewController {
             }
         }
     }
-    func getAlbumThumbnailImage() {
-        let fetchOption = PHFetchOptions()
-        fetchOption.fetchLimit = 1
-        fetchOption.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        let fetchPhotos = PHAsset.fetchAssets(with: fetchOption)
-        if let photo = fetchPhotos.firstObject {
-            DispatchQueue.main.async {
-                ImageManager.shared.requestImage(from: photo, thumnailSize: self.recordingView.thumbnailButton.frame.size) { image in
-                    self.recordingView.thumbnailButton.setImage(image, for: .normal)
-                }
-            }
-        } else {
-            self.recordingView.thumbnailButton.setImage(UIImage(named: "image"), for: .normal)
-        }
-    }
-    
-    func tempURL() -> URL? {
-        let directory = NSTemporaryDirectory() as NSString
 
-        if directory != "" {
-            let path = directory.appendingPathComponent(NSUUID().uuidString + ".mp4")
-            return URL(fileURLWithPath: path)
-        }
-
-        return nil
-    }
-    
     func addSubView() {
         view.addSubview(recordingView)
     }
@@ -226,12 +198,5 @@ extension RecordingViewController: AVCaptureFileOutputRecordingDelegate {
             //로컬에 저장
             UISaveVideoAtPathToSavedPhotosAlbum(videoURL.path, nil, nil, nil)
         }
-    }
-}
-
-extension RecordingViewController: PHPhotoLibraryChangeObserver {
-    func photoLibraryDidChange(_ changeInstance: PHChange) {
-        // 갤러리 변화를 감지했을 때
-        getAlbumThumbnailImage()
     }
 }

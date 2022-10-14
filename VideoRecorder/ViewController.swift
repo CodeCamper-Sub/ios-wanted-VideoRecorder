@@ -33,7 +33,7 @@ class ViewController: UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        videoListView.videoListTableView.reloadData()
+        videoListView.loadData(true)
     }
     
     @objc func recodeButtonPressed() {
