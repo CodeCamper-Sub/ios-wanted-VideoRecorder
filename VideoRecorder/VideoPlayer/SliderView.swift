@@ -44,7 +44,7 @@ class SliderView: UIView {
     }()
     
     // MARK: Associated Types
-    typealias ViewModel = SliderViewModel
+    typealias ViewModel = VideoPlayerViewModel
     
     // MARK: Properties
     var didSetupConstraints = false
@@ -128,7 +128,7 @@ class SliderView: UIView {
             .map { $0.location(in: self).x }
             .map { $0 / self.frame.width }
             .map { min(max(0, $0), 1) }
-            .map { ViewModel.Action.updateProgress($0) }
+            .map { ViewModel.Action.updateCurrentTimeWithProgress($0) }
             .subscribe(viewModel.action)
             .store(in: &subscriptions)
         
@@ -140,8 +140,11 @@ class SliderView: UIView {
             .store(in: &subscriptions)
         
         // State
-        viewModel.$progress
-            .map { CGFloat($0) }
+        viewModel.$currentTime
+            .combineLatest(viewModel.$metaData)
+            .map { ($0, $1.videoLength) }
+            .filter { $1 > 0 }
+            .map { CGFloat($0 / $1) }
             .combineLatest(backgroundView.$framePublisher)
             .sink { [weak self] multiplier, frame in
                 guard
@@ -153,34 +156,3 @@ class SliderView: UIView {
             .store(in: &subscriptions)
     }
 }
-
-#if canImport(SwiftUI) && DEBUG
-struct ContentViewPreview<View: UIView> : UIViewRepresentable {
-    
-    let view: View
-    
-    init(_ builder: @escaping () -> View) {
-        view = builder()
-    }
-    
-    func makeUIView(context: Context) -> some UIView {
-        view
-    }
-    
-    func updateUIView(_ uiView: UIViewType, context: Context) {
-        
-    }
-}
-#endif
-
-#if canImport(SwiftUI) && DEBUG
-struct SliderViewPreviewProvider: PreviewProvider {
-    static var previews: some View {
-        ContentViewPreview {
-            let view = SliderView(viewModel: SliderViewModel())
-            return view
-        }.previewLayout(.fixed(width: 390, height: 80))
-            .background(Color.black .opacity(0.5))
-    }
-}
-#endif

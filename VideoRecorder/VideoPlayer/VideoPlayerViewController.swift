@@ -30,8 +30,7 @@ class VideoPlayerViewController: UIViewController {
     }()
     
     lazy var controlView: VideoPlayerControlView = {
-        let viewModel = VideoPlayerControlViewModel()
-        let view = VideoPlayerControlView(viewModel: viewModel)
+        let view = VideoPlayerControlView(viewModel: self.viewModel)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -191,36 +190,6 @@ class VideoPlayerViewController: UIViewController {
     
     // MARK: Binding
     func bind() {
-        // Action
-        self.view.gesture(.tap)
-            .map { _ in ViewModel.Action.toggleToolsVisibility }
-            .subscribe(viewModel.action)
-            .store(in: &subscriptions)
-        
-        controlView.rewindButton.gesture(.tap)
-            .map { _ in ViewModel.Action.rewind }
-            .subscribe(viewModel.action)
-            .store(in: &subscriptions)
-        
-        controlView.viewModel.$isPlaying
-            .map { ViewModel.Action.setIsPlaying($0) }
-            .subscribe(viewModel.action)
-            .store(in: &subscriptions)
-        
-        controlView.viewModel.$isEditingCurrentTime
-            .map { ViewModel.Action.setIsEditingCurrentTime($0) }
-            .subscribe(viewModel.action)
-            .store(in: &subscriptions)
-        
-        controlView.viewModel.$isEditingCurrentTime
-            .removeDuplicates()
-            .filter { $0 == false }
-            .dropFirst()
-            .map { _ in self.controlView.viewModel.currentTime }
-            .map { ViewModel.Action.seekTime($0) }
-            .subscribe(viewModel.action)
-            .store(in: &subscriptions)
-        
         // State
         viewModel.$player
             .assign(to: \.player, on: videoPlayerLayer)
@@ -235,46 +204,25 @@ class VideoPlayerViewController: UIViewController {
                 self.activityIndicatorView.stopAnimating()
             }.store(in: &subscriptions)
         
-        viewModel.player.publisher(for: \.timeControlStatus)
-            .map { $0 == .playing }
-            .removeDuplicates()
-            .map { VideoPlayerControlViewModel.Action.setIsPlaying($0) }
-            .subscribe(controlView.viewModel.action)
-            .store(in: &subscriptions)
-        
-        viewModel.$toolsIsHidden
-            .removeDuplicates()
-            .sink { [weak self] isHidden in
-                guard let self else { return }
-                UIView.animate(withDuration: 0.2) {
-                    self.controlView.alpha = isHidden ? 0 : 1
-                    self.navigationView.alpha = isHidden ? 0 : 1
-                }
-            }.store(in: &subscriptions)
-        
         viewModel.$metaData
             .compactMap { $0.name }
             .removeDuplicates()
             .assign(to: \.text, on: titleLabel)
             .store(in: &subscriptions)
         
-        viewModel.$metaData
-            .compactMap { $0.videoLength }
-            .removeDuplicates()
-            .map { VideoPlayerControlViewModel.Action.setDuration($0) }
-            .subscribe(controlView.viewModel.action)
-            .store(in: &subscriptions)
-        
-        viewModel.$currentTime
-            .removeDuplicates()
-            .map { VideoPlayerControlViewModel.Action.setCurrentTime($0) }
-            .subscribe(controlView.viewModel.action)
-            .store(in: &subscriptions)
-        
         // View
         videoPlayerView.bounds()
             .assign(to: \.frame, on: videoPlayerLayer)
             .store(in: &subscriptions)
+        
+        self.view.gesture(.tap)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                UIView.animate(withDuration: 0.2) {
+                    self.controlView.alpha = self.controlView.alpha == 1 ? 0 : 1
+                    self.navigationView.alpha = self.navigationView.alpha == 1 ? 0 : 1
+                }
+            }.store(in: &subscriptions)
     }
 }
 

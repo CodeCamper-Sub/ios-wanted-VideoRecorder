@@ -13,16 +13,18 @@ import AVKit
 class VideoPlayerViewModel {
     // MARK: Input
     enum Action {
-        case toggleToolsVisibility
-        case rewind
+        case toggleIsPlaying
         case setIsPlaying(Bool)
+        case seekToCurrentTime
+        
+        case updateCurrentTimeWithProgress(Double)
+        case rewind
+        
         case setIsEditingCurrentTime(Bool)
-        case seekTime(Double)
     }
     
     // MARK: Output
     @Published var player: AVPlayer = AVPlayer()
-    @Published var toolsIsHidden = false
     @Published var metaData: VideoMetaData
     @Published var currentTime: Double = 0
     @Published var isEditingCurrentTime: Bool = false
@@ -46,11 +48,8 @@ class VideoPlayerViewModel {
     // MARK: Mutate
     func mutate(action: Action) {
         switch action {
-        case .toggleToolsVisibility:
-            toolsIsHidden.toggle()
         case .rewind:
             player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
-            self.currentTime = .zero
         case .setIsPlaying(let shouldPlay):
             if shouldPlay {
                 player.play()
@@ -61,8 +60,20 @@ class VideoPlayerViewModel {
             if isEditingCurrentTime != isEditing {
                 isEditingCurrentTime = isEditing
             }
-        case .seekTime(let time):
-            self.player.seek(to: CMTime(seconds: time, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        case .seekToCurrentTime:
+            self.player.seek(to: CMTime(seconds: currentTime, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+            
+        case .toggleIsPlaying:
+            if player.timeControlStatus == .paused {
+                player.play()
+            } else {
+                player.pause()
+            }
+        case .updateCurrentTimeWithProgress(let progress):
+            let currentTime = progress * metaData.videoLength
+            if self.currentTime != currentTime {
+                self.currentTime = currentTime
+            }
         }
     }
     
@@ -78,6 +89,14 @@ class VideoPlayerViewModel {
                 self.player.replaceCurrentItem(with: item)
                 self.player.play()
             }).store(in: &subscriptions)
+        
+        $isEditingCurrentTime
+            .removeDuplicates()
+            .filter { $0 == false }
+            .dropFirst()
+            .map { _ in Action.seekToCurrentTime }
+            .subscribe(action)
+            .store(in: &subscriptions)
         
         NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)
             .map { _ in Action.setIsPlaying(false) }

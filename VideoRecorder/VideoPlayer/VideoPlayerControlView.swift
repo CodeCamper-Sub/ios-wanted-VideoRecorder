@@ -14,8 +14,7 @@ import SwiftUI
 class VideoPlayerControlView: UIView {
     // MARK: View Components
     lazy var sliderView: SliderView = {
-        let viewModel = SliderViewModel()
-        let view = SliderView(viewModel: viewModel)
+        let view = SliderView(viewModel: self.viewModel)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -63,7 +62,7 @@ class VideoPlayerControlView: UIView {
     }()
     
     // MARK: Associated Types
-    typealias ViewModel = VideoPlayerControlViewModel
+    typealias ViewModel = VideoPlayerViewModel
     
     // MARK: Properties
     var didSetupConstraints = false
@@ -164,20 +163,14 @@ class VideoPlayerControlView: UIView {
             .subscribe(viewModel.action)
             .store(in: &subscriptions)
         
-        sliderView.viewModel.$isEditingCurrentTime
-            .map { ViewModel.Action.setIsEditingCurrentTime($0) }
-            .subscribe(viewModel.action)
-            .store(in: &subscriptions)
-        
-        sliderView.viewModel.$isEditingCurrentTime
-            .filter { $0 == false }
-            .combineLatest(sliderView.viewModel.$progress)
-            .map { ViewModel.Action.setCurrentTimeWithProgress($1) }
+        rewindButton.gesture(.tap)
+            .map { _ in ViewModel.Action.rewind }
             .subscribe(viewModel.action)
             .store(in: &subscriptions)
         
         // State
-        viewModel.$isPlaying
+        viewModel.player.publisher(for: \.timeControlStatus)
+            .map { $0 == .playing }
             .map { $0 ? UIImage(systemName: "pause.fill") : UIImage(systemName: "play.fill") }
             .sink { [weak self] image in
                 guard let self else { return }
@@ -189,31 +182,10 @@ class VideoPlayerControlView: UIView {
             .assign(to: \.text, on: currentTimeLabel)
             .store(in: &subscriptions)
         
-        viewModel.$duration
+        viewModel.$metaData
+            .map { $0.videoLength }
             .map { $0.convertToTimeFormat() }
             .assign(to: \.text, on: durationLabel)
             .store(in: &subscriptions)
-        
-        viewModel.$duration
-            .filter { $0 > 0 }
-            .combineLatest(viewModel.$currentTime)
-            .map { $1 / $0 }
-            .map { SliderViewModel.Action.updateProgress($0) }
-            .subscribe(sliderView.viewModel.action)
-            .store(in: &subscriptions)
     }
 }
-
-#if canImport(SwiftUI) && DEBUG
-struct VideoPlayerControlViewPreviewProvider: PreviewProvider {
-    static var previews: some View {
-        ContentViewPreview {
-            let viewModel = VideoPlayerControlViewModel()
-            let view = VideoPlayerControlView(viewModel: viewModel)
-            return view
-        }
-        .previewLayout(.fixed(width: 348, height: 148))
-        .background(Color.white)
-    }
-}
-#endif
