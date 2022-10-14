@@ -54,8 +54,8 @@ class CoreDataManager: CoreDataManagerProtocol {
     
     func fetchVideoMetaData(start: Int) throws -> [VideoMetaData] {
         let request = VideoMetaData.fetchRequest()
-//        request.fetchLimit = 6
-//        request.fetchOffset = start
+        request.fetchLimit = 6
+        request.fetchOffset = start
         let result = try self.context.fetch(request)
         return result
     }
