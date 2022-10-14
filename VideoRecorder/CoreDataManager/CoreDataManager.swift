@@ -35,7 +35,6 @@ protocol CoreDataManagerProtocol {
 class CoreDataManager: CoreDataManagerProtocol {
     // MARK: Singleton
     static let shared = CoreDataManager()
-    var videoMataData = [VideoMetaData]()
     
     private init() { }
     
@@ -55,8 +54,8 @@ class CoreDataManager: CoreDataManagerProtocol {
     
     func fetchVideoMetaData(start: Int) throws -> [VideoMetaData] {
         let request = VideoMetaData.fetchRequest()
-        request.fetchLimit = 6
-        request.fetchOffset = start
+//        request.fetchLimit = 6
+//        request.fetchOffset = start
         let result = try self.context.fetch(request)
         return result
     }
@@ -69,7 +68,6 @@ class CoreDataManager: CoreDataManagerProtocol {
         metaData.videoPath = videoPath
         metaData.thumbnail = thumbnail
         metaData.videoLength = videoLength
-        videoMataData.insert(metaData, at: 0)
         return metaData
     }
     

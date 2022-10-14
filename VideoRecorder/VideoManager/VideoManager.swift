@@ -65,6 +65,7 @@ class VideoManager: VideoManagerProtocol {
                     videoPath: path,
                     thumbnail: thumbnail,
                     videoLength: asset.duration.seconds)
+                try CoreDataManager.shared.insertVideoMetaData(metaData)
                 DispatchQueue.main.async {
                     completion(.success(metaData))
                 }

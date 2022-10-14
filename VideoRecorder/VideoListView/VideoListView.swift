@@ -9,6 +9,10 @@ import UIKit
 
 class VideoListView: UIView {
     
+    var start: Int = 0
+    var isLoadOver = false
+    var videoMataDatas = [VideoMetaData]()
+    
     let formatter: DateFormatter = {
         let f = DateFormatter()
         f.dateStyle = .long
@@ -28,7 +32,7 @@ class VideoListView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        loadData()
+        loadData(true)
         
         setupTableView()
         
@@ -40,14 +44,24 @@ class VideoListView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func loadData() {
-        var resultMetaData: VideoMetaData?
-        VideoManager.shared.loadVideos(start: 6) { result in
-            print("result: \(String(describing: result))")
+    func loadData(_ refresh: Bool) {
+        if refresh {
+            self.videoMataDatas = []
+            self.start = 0
+            self.isLoadOver = false
+        }
+        if isLoadOver { return }
+        
+        VideoManager.shared.loadVideos(start: self.start) { result in
             switch result {
             case .success(let metaDatas):
-                resultMetaData = metaDatas.first
-                print("result: \(String(describing: resultMetaData))")
+                self.videoMataDatas = metaDatas
+                self.videoListTableView.reloadData()
+                self.start += metaDatas.count
+                if metaDatas.count != 6 {
+                    self.isLoadOver = true
+                }
+                print("result: \(String(describing: result))")
                 break
             case .failure(let error):
                 print(error.localizedDescription)
@@ -84,35 +98,38 @@ class VideoListView: UIView {
 extension VideoListView: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return CoreDataManager.shared.videoMataData.count
+        return videoMataDatas.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! VideoListTableViewCell
-        let data = CoreDataManager.shared.videoMataData[indexPath.row]
+        let data = videoMataDatas[indexPath.row]
         cell.thumbnailImageView.image = UIImage(data: data.thumbnail!)
         cell.timelabel.text = timeString(from: data.videoLength)
         cell.videoNameLabel.text = data.name
-        cell.dateLabel.text = formatter.string(for: data.createdAt)
+        cell.dateLabel.text = formatter.string(from: data.createdAt!)
         return cell
     }
     
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            let data = CoreDataManager.shared.videoMataData[indexPath.row]
-            var resultMetaData: VideoMetaData?
-            VideoManager.shared.saveVideo(name: "Test", path: data.videoPath!) { result in
-                print("여기 \(result)")
-                switch result {
-                case .success(let metaData):
-                    resultMetaData = metaData
-                case .failure(let error):
-                    debugPrint(error.localizedDescription)
-                }
-            }
-            CoreDataManager.shared.videoMataData.remove(at: indexPath.row)
-            videoListTableView.deleteRows(at: [indexPath], with: .fade)
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row == videoMataDatas.count-1 {
+            self.loadData(false)
         }
     }
+    
+//    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+//        if editingStyle == .delete {
+//            var resultMetaData: VideoMetaData?
+//            VideoManager.shared.de(name: "Test", path: data.videoPath!) { result in
+//                switch result {
+//                case .success(let metaData):
+//                    resultMetaData = metaData
+//                case .failure(let error):
+//                    debugPrint(error.localizedDescription)
+//                }
+//            }
+//            videoListTableView.deleteRows(at: [indexPath], with: .fade)
+//        }
+//    }
 }
 
