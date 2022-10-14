@@ -222,15 +222,6 @@ class VideoPlayerViewController: UIViewController {
             .store(in: &subscriptions)
         
         // State
-        viewModel.$toolsIsHidden
-            .sink { [weak self] isHidden in
-                guard let self else { return }
-                UIView.animate(withDuration: 0.2) {
-                    self.controlView.alpha = isHidden ? 0 : 1
-                    self.navigationView.alpha = isHidden ? 0 : 1
-                }
-            }.store(in: &subscriptions)
-        
         viewModel.$player
             .assign(to: \.player, on: videoPlayerLayer)
             .store(in: &subscriptions)
@@ -244,7 +235,6 @@ class VideoPlayerViewController: UIViewController {
                 self.activityIndicatorView.stopAnimating()
             }.store(in: &subscriptions)
         
-        
         viewModel.player.publisher(for: \.timeControlStatus)
             .map { $0 == .playing }
             .removeDuplicates()
@@ -252,18 +242,31 @@ class VideoPlayerViewController: UIViewController {
             .subscribe(controlView.viewModel.action)
             .store(in: &subscriptions)
         
+        viewModel.$toolsIsHidden
+            .removeDuplicates()
+            .sink { [weak self] isHidden in
+                guard let self else { return }
+                UIView.animate(withDuration: 0.2) {
+                    self.controlView.alpha = isHidden ? 0 : 1
+                    self.navigationView.alpha = isHidden ? 0 : 1
+                }
+            }.store(in: &subscriptions)
+        
+        viewModel.$metaData
+            .compactMap { $0.name }
+            .removeDuplicates()
+            .assign(to: \.text, on: titleLabel)
+            .store(in: &subscriptions)
+        
         viewModel.$metaData
             .compactMap { $0.videoLength }
+            .removeDuplicates()
             .map { VideoPlayerControlViewModel.Action.setDuration($0) }
             .subscribe(controlView.viewModel.action)
             .store(in: &subscriptions)
         
-        viewModel.$metaData
-            .compactMap { $0.name }
-            .assign(to: \.text, on: titleLabel)
-            .store(in: &subscriptions)
-        
         viewModel.$currentTime
+            .removeDuplicates()
             .map { VideoPlayerControlViewModel.Action.setCurrentTime($0) }
             .subscribe(controlView.viewModel.action)
             .store(in: &subscriptions)

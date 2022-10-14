@@ -144,7 +144,10 @@ class SliderView: UIView {
             .map { CGFloat($0) }
             .combineLatest(backgroundView.$framePublisher)
             .sink { [weak self] multiplier, frame in
-                guard let self else { return }
+                guard
+                    let self,
+                    frame.width * multiplier >= 0
+                else { return }
                 self.foregroundViewWidthAnchor?.constant = frame.width * multiplier
             }
             .store(in: &subscriptions)

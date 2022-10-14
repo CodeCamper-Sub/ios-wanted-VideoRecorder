@@ -177,6 +177,13 @@ class VideoPlayerControlView: UIView {
             .store(in: &subscriptions)
         
         // State
+        viewModel.$isPlaying
+            .map { $0 ? UIImage(systemName: "pause.fill") : UIImage(systemName: "play.fill") }
+            .sink { [weak self] image in
+                guard let self else { return }
+                self.playButton.setImage(image, for: .normal)
+            }.store(in: &subscriptions)
+        
         viewModel.$currentTime
             .map { $0.convertToTimeFormat() }
             .assign(to: \.text, on: currentTimeLabel)
@@ -186,13 +193,6 @@ class VideoPlayerControlView: UIView {
             .map { $0.convertToTimeFormat() }
             .assign(to: \.text, on: durationLabel)
             .store(in: &subscriptions)
-        
-        viewModel.$isPlaying
-            .map { $0 ? UIImage(systemName: "pause.fill") : UIImage(systemName: "play.fill") }
-            .sink { [weak self] image in
-                guard let self else { return }
-                self.playButton.setImage(image, for: .normal)
-            }.store(in: &subscriptions)
         
         viewModel.$duration
             .filter { $0 > 0 }
