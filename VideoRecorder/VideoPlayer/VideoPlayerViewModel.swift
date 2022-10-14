@@ -21,7 +21,7 @@ class VideoPlayerViewModel {
     }
     
     // MARK: Output
-    @Published var player: AVPlayer? { didSet { bindPlayer() }}
+    @Published var player: AVPlayer = AVPlayer()
     @Published var toolsIsHidden = false
     @Published var metaData: VideoMetaData
     @Published var currentTime: Double = 0
@@ -49,20 +49,20 @@ class VideoPlayerViewModel {
         case .toggleToolsVisibility:
             toolsIsHidden.toggle()
         case .rewind:
-            player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+            player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
             self.currentTime = .zero
         case .setIsPlaying(let shouldPlay):
             if shouldPlay {
-                player?.play()
+                player.play()
             } else {
-                player?.pause()
+                player.pause()
             }
         case .setIsEditingCurrentTime(let isEditing):
             if isEditingCurrentTime != isEditing {
                 isEditingCurrentTime = isEditing
             }
         case .seekTime(let time):
-            self.player?.seek(to: CMTime(seconds: time, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+            self.player.seek(to: CMTime(seconds: time, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
         }
     }
     
@@ -74,26 +74,25 @@ class VideoPlayerViewModel {
             .sink(receiveCompletion: { _ in },
                   receiveValue: { [weak self] url in
                 guard let self else { return }
-                self.player = AVPlayer(url: url)
-                self.player?.play()
+                let item = AVPlayerItem(url: url)
+                self.player.replaceCurrentItem(with: item)
+                self.player.play()
             }).store(in: &subscriptions)
         
         NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)
             .map { _ in Action.setIsPlaying(false) }
             .subscribe(action)
             .store(in: &subscriptions)
-    }
-    
-    func bindPlayer() {
+        
         Timer.publish(every: 1 / 600, on: .main, in: .default)
             .autoconnect()
             .sink { [weak self] timer in
                 guard
                     let self,
                     !self.isEditingCurrentTime,
-                    let seconds = self.player?.currentTime().seconds
+                    self.player.currentItem != nil
                 else { return }
-                self.currentTime = seconds
+                self.currentTime = self.player.currentTime().seconds
             }.store(in: &subscriptions)
     }
 }

@@ -235,8 +235,8 @@ class VideoPlayerViewController: UIViewController {
             .assign(to: \.player, on: videoPlayerLayer)
             .store(in: &subscriptions)
         
-        viewModel.$player
-            .filter { $0 != nil }
+        viewModel.player.publisher(for: \.status)
+            .filter { $0 == .readyToPlay }
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -244,7 +244,8 @@ class VideoPlayerViewController: UIViewController {
                 self.activityIndicatorView.stopAnimating()
             }.store(in: &subscriptions)
         
-        viewModel.player?.publisher(for: \.timeControlStatus)
+        
+        viewModel.player.publisher(for: \.timeControlStatus)
             .map { $0 == .playing }
             .removeDuplicates()
             .map { VideoPlayerControlViewModel.Action.setIsPlaying($0) }
