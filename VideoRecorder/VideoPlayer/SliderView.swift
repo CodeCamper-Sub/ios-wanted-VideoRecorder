@@ -122,12 +122,20 @@ class SliderView: UIView {
     // MARK: Binding
     func bind() {
         // Action
-        self.gesture(.pan)
-            .merge(with: self.gesture(.tap))
+        let gestureStream = self.gesture(.pan).merge(with: self.gesture(.tap)).share()
+        
+        gestureStream
             .map { $0.location(in: self).x }
             .map { $0 / self.frame.width }
             .map { min(max(0, $0), 1) }
             .map { ViewModel.Action.updateProgress($0) }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
+        gestureStream
+            .filter { $0.state == .began || $0.state == .ended }
+            .map { $0.state == .began }
+            .map { ViewModel.Action.setIsEditingCurrentTime($0) }
             .subscribe(viewModel.action)
             .store(in: &subscriptions)
         

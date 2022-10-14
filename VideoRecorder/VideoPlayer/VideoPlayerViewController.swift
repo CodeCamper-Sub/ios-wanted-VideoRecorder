@@ -9,10 +9,19 @@ import Foundation
 import UIKit
 import Combine
 import SwiftUI
+import AVKit
 
 // MARK: - View Controller
 class VideoPlayerViewController: UIViewController {
     // MARK: View Components
+    lazy var videoPlayerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    lazy var videoPlayerLayer = AVPlayerLayer()
+    
     lazy var navigationView: UIView = {
         let view = UIView()
         view.backgroundColor = .white.withAlphaComponent(0.35)
@@ -52,18 +61,35 @@ class VideoPlayerViewController: UIViewController {
         return button
     }()
     
+    lazy var activityIndicatorView: UIActivityIndicatorView = {
+        let view = UIActivityIndicatorView()
+        view.backgroundColor = .white.withAlphaComponent(0.5)
+        view.startAnimating()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     // MARK: Associated Types
     typealias ViewModel = VideoPlayerViewModel
     
     
     // MARK: Properties
     var didSetupConstraints = false
-    var viewModel = ViewModel()
+    var viewModel: ViewModel
     var subscriptions = [AnyCancellable]()
     
     
     
     // MARK: View Life Cycle
+    init(viewModel: ViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
@@ -93,13 +119,16 @@ class VideoPlayerViewController: UIViewController {
     
     // MARK: Setup Views
     func setupViews() {
-        self.view.backgroundColor = .gray
+        self.videoPlayerView.backgroundColor = .gray
     }
     
     // MARK: Build View Hierarchy
     func buildViewHierarchy() {
-        self.view.addSubview(navigationView)
+        self.view.addSubview(videoPlayerView)
         self.view.addSubview(controlView)
+        self.view.addSubview(activityIndicatorView)
+        self.view.addSubview(navigationView)
+        videoPlayerView.layer.addSublayer(videoPlayerLayer)
         navigationView.addSubview(backButton)
         navigationView.addSubview(titleLabel)
         navigationView.addSubview(infoButton)
@@ -143,6 +172,20 @@ class VideoPlayerViewController: UIViewController {
             controlView.heightAnchor.constraint(equalToConstant: 148),
             controlView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -64),
         ]
+        
+        constraints += [
+            videoPlayerView.topAnchor.constraint(equalTo: view.topAnchor),
+            videoPlayerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            videoPlayerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            videoPlayerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ]
+        
+        constraints += [
+            activityIndicatorView.topAnchor.constraint(equalTo: view.topAnchor),
+            activityIndicatorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            activityIndicatorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            activityIndicatorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ]
     }
     
     
@@ -151,6 +194,30 @@ class VideoPlayerViewController: UIViewController {
         // Action
         self.view.gesture(.tap)
             .map { _ in ViewModel.Action.toggleToolsVisibility }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
+        controlView.rewindButton.gesture(.tap)
+            .map { _ in ViewModel.Action.rewind }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
+        controlView.viewModel.$isPlaying
+            .map { ViewModel.Action.setIsPlaying($0) }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
+        controlView.viewModel.$isEditingCurrentTime
+            .map { ViewModel.Action.setIsEditingCurrentTime($0) }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
+        controlView.viewModel.$isEditingCurrentTime
+            .removeDuplicates()
+            .filter { $0 == false }
+            .dropFirst()
+            .map { _ in self.controlView.viewModel.currentTime }
+            .map { ViewModel.Action.seekTime($0) }
             .subscribe(viewModel.action)
             .store(in: &subscriptions)
         
@@ -163,6 +230,47 @@ class VideoPlayerViewController: UIViewController {
                     self.navigationView.alpha = isHidden ? 0 : 1
                 }
             }.store(in: &subscriptions)
+        
+        viewModel.$player
+            .assign(to: \.player, on: videoPlayerLayer)
+            .store(in: &subscriptions)
+        
+        viewModel.$player
+            .filter { $0 != nil }
+            .prefix(1)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.activityIndicatorView.isHidden = true
+                self.activityIndicatorView.stopAnimating()
+            }.store(in: &subscriptions)
+        
+        viewModel.player?.publisher(for: \.timeControlStatus)
+            .map { $0 == .playing }
+            .removeDuplicates()
+            .map { VideoPlayerControlViewModel.Action.setIsPlaying($0) }
+            .subscribe(controlView.viewModel.action)
+            .store(in: &subscriptions)
+        
+        viewModel.$metaData
+            .compactMap { $0.videoLength }
+            .map { VideoPlayerControlViewModel.Action.setDuration($0) }
+            .subscribe(controlView.viewModel.action)
+            .store(in: &subscriptions)
+        
+        viewModel.$metaData
+            .compactMap { $0.name }
+            .assign(to: \.text, on: titleLabel)
+            .store(in: &subscriptions)
+        
+        viewModel.$currentTime
+            .map { VideoPlayerControlViewModel.Action.setCurrentTime($0) }
+            .subscribe(controlView.viewModel.action)
+            .store(in: &subscriptions)
+        
+        // View
+        videoPlayerView.bounds()
+            .assign(to: \.frame, on: videoPlayerLayer)
+            .store(in: &subscriptions)
     }
 }
 
@@ -189,7 +297,9 @@ struct ContentViewControllerPreview<View: UIViewController> : UIViewControllerRe
 struct VideoPlayerViewControllerPreviewProvider: PreviewProvider {
     static var previews: some View {
         ContentViewControllerPreview {
-            let viewController = VideoPlayerViewController()
+            let metaData = DummyGenerator.dummyVideoMetaData()!
+            let viewModel = VideoPlayerViewModel(metaData: metaData)
+            let viewController = VideoPlayerViewController(viewModel: viewModel)
             let navigationController = UINavigationController(rootViewController: viewController)
             return navigationController
         }

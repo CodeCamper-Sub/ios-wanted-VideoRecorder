@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension Int {
+extension Double {
     func convertToTimeFormat() -> String {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.minute, .second]

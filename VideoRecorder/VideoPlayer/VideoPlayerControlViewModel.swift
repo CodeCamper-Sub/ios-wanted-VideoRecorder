@@ -13,12 +13,18 @@ class VideoPlayerControlViewModel {
     // MARK: Input
     enum Action {
         case toggleIsPlaying
+        case setIsPlaying(Bool)
+        case setCurrentTime(Double)
+        case setCurrentTimeWithProgress(Double)
+        case setDuration(Double)
+        case setIsEditingCurrentTime(Bool)
     }
     
     // MARK: Output
     @Published var isPlaying: Bool = false
-    @Published var currentTime: Int = 63
-    @Published var duration: Int = 221
+    @Published var currentTime: Double = 63
+    @Published var duration: Double = 221
+    @Published var isEditingCurrentTime: Bool = false
     
     // MARK: Properties
     var action = PassthroughSubject<Action, Never>()
@@ -39,6 +45,27 @@ class VideoPlayerControlViewModel {
         switch action {
         case .toggleIsPlaying:
             isPlaying.toggle()
+        case .setIsPlaying(let isPlaying):
+            if self.isPlaying != isPlaying {
+                self.isPlaying = isPlaying
+            }
+        case .setCurrentTime(let time):
+            if currentTime != time {
+                currentTime = time
+            }
+        case .setCurrentTimeWithProgress(let progress):
+            let currentTime = progress * duration
+            if self.currentTime != currentTime {
+                self.currentTime = currentTime
+            }
+        case .setDuration(let time):
+            if duration != time {
+                duration = time
+            }
+        case .setIsEditingCurrentTime(let isEditing):
+            if isEditingCurrentTime != isEditing {
+                isEditingCurrentTime = isEditing
+            }
         }
     }
 }

@@ -164,6 +164,18 @@ class VideoPlayerControlView: UIView {
             .subscribe(viewModel.action)
             .store(in: &subscriptions)
         
+        sliderView.viewModel.$isEditingCurrentTime
+            .map { ViewModel.Action.setIsEditingCurrentTime($0) }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
+        sliderView.viewModel.$isEditingCurrentTime
+            .filter { $0 == false }
+            .combineLatest(sliderView.viewModel.$progress)
+            .map { ViewModel.Action.setCurrentTimeWithProgress($1) }
+            .subscribe(viewModel.action)
+            .store(in: &subscriptions)
+        
         // State
         viewModel.$currentTime
             .map { $0.convertToTimeFormat() }
@@ -181,6 +193,14 @@ class VideoPlayerControlView: UIView {
                 guard let self else { return }
                 self.playButton.setImage(image, for: .normal)
             }.store(in: &subscriptions)
+        
+        viewModel.$duration
+            .filter { $0 > 0 }
+            .combineLatest(viewModel.$currentTime)
+            .map { $1 / $0 }
+            .map { SliderViewModel.Action.updateProgress($0) }
+            .subscribe(sliderView.viewModel.action)
+            .store(in: &subscriptions)
     }
 }
 
