@@ -89,10 +89,12 @@ class RecordingViewController: UIViewController {
             recordingStart()
             videoTimerStart()
             recordingView.rotateButton.isEnabled = false
+            recordingView.cencelButton.isEnabled = false
         } else {
             recordingStop()
             videoTimerStop()
             recordingView.rotateButton.isEnabled = true
+            recordingView.cencelButton.isEnabled = true
         }
         recodeBool = !recodeBool
     }
