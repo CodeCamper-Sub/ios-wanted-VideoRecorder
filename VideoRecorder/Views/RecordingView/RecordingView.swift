@@ -27,7 +27,7 @@ class RecordingView: UIView {
     
     let thumbnailImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "image")
+        imageView.image = UIImage(named: "sampleThumbnail")
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 15
         imageView.translatesAutoresizingMaskIntoConstraints = false
