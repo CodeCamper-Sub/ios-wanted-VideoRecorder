@@ -7,7 +7,6 @@
 
 import UIKit
 import AVFoundation
-import Photos
 
 class RecordingViewController: UIViewController {
     
@@ -102,7 +101,6 @@ class RecordingViewController: UIViewController {
     func recordingStart() {
         outputURL = VideoManager.shared.getVideoURL()
 
-        print("outputURL = \(outputURL!)")
         videoOutput.startRecording(to: outputURL!, recordingDelegate: self)
     }
     
@@ -152,17 +150,6 @@ class RecordingViewController: UIViewController {
             $0.position == position
             }.first
     }
-    
-    class ImageManager {
-        static let shared = ImageManager()
-        private let imageManager = PHImageManager()
-        
-        func requestImage(from asset: PHAsset, thumnailSize: CGSize, completion: @escaping (UIImage?) -> Void) {
-            self.imageManager.requestImage(for: asset, targetSize: thumnailSize, contentMode: .aspectFill, options: nil) { image, info in
-                completion(image)
-            }
-        }
-    }
 
     func addSubView() {
         view.addSubview(recordingView)
@@ -182,7 +169,7 @@ extension RecordingViewController: AVCaptureFileOutputRecordingDelegate {
     
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         if (error != nil) {
-            print("Error recording movie: \(error!.localizedDescription)")
+            debugPrint("Error recording movie: \(error!.localizedDescription)")
         } else {
             let videoURL = outputURL! as URL
             var resultMetaData: VideoMetaData?
@@ -190,7 +177,6 @@ extension RecordingViewController: AVCaptureFileOutputRecordingDelegate {
                 switch result {
                 case .success(let metaData):
                     resultMetaData = metaData
-                    print("res: \(String(describing: resultMetaData))")
                 case .failure(let error):
                     debugPrint(error.localizedDescription)
                 }

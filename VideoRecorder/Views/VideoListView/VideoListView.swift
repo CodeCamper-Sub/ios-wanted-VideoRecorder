@@ -64,10 +64,9 @@ class VideoListView: UIView {
                 if metaDatas.count != 6 {
                     self.isLoadOver = true
                 }
-                print("result: \(String(describing: result))")
                 break
             case .failure(let error):
-                print(error.localizedDescription)
+                debugPrint(error.localizedDescription)
             }
             self.isLoading = false
         }
@@ -129,7 +128,7 @@ extension VideoListView: UITableViewDelegate, UITableViewDataSource {
                     self.videoMetaDatas.remove(at: indexPath.row)
                     break
                 case .failure(let error):
-                    print(error.localizedDescription)
+                    debugPrint(error.localizedDescription)
                 }
                 self.videoListTableView.deleteRows(at: [indexPath], with: .fade)
             }
