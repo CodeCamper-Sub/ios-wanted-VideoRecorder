@@ -7,6 +7,7 @@
 
 import Foundation
 import AVKit
+import Combine
 
 protocol VideoManagerProtocol {
     /// 녹화한 영상이 저장될 경로를 요청합니다.
@@ -32,6 +33,12 @@ protocol VideoManagerProtocol {
     ///   - data: 삭제할 영상의 data입니다.
     ///   - completion: 영상의 삭제가 완료된 뒤, 실행되는 completion입니다.
     func deleteVideo(data: VideoMetaData, completion: @escaping (Result<Void, Error>) -> ())
+    
+    /// 필요한 경우, Firebase Storage에서 영상을 다운로드합니다.
+    /// - Parameters:
+    ///   - url: 영상이 저장될 로컬 URL입니다.
+    ///   - completion: 영상 다운로드가 완료된 후, 실행되는 completion입니다.
+    func getVideoIfNeeded(_ url: URL, completion: @escaping (Result<URL, Error>) -> ())
 }
 
 extension VideoManagerProtocol {
@@ -97,7 +104,10 @@ class VideoManager: VideoManagerProtocol {
         DispatchQueue.global().async {
             do {
                 if let url = data.videoPath {
-                    try FileManager.default.removeItem(at: url)
+                    let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(url.lastPathComponent)
+                    if FileManager.default.fileExists(atPath: url.relativePath) {
+                        try FileManager.default.removeItem(at: url)
+                    }
                     FirebaseManager.shared.deleteVideo(url)
                 }
                 try CoreDataManager.shared.deleteVideoMetaData(data)
@@ -110,5 +120,25 @@ class VideoManager: VideoManagerProtocol {
                 }
             }
         }
+    }
+    
+    func getVideoIfNeeded(_ url: URL, completion: @escaping (Result<URL, Error>) -> ()) {
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(url.lastPathComponent)
+        if FileManager.default.fileExists(atPath: url.relativePath) {
+            completion(.success(url))
+            return
+        }
+        FirebaseManager.shared.getVideo(url, completion: completion)
+    }
+}
+
+// MARK: Combine Extension
+extension VideoManager {
+    func getVideoIfNeeded(_ url: URL) -> AnyPublisher<URL, Error> {
+        return Future { promise in
+            self.getVideoIfNeeded(url) { result in
+                promise(result)
+            }
+        }.eraseToAnyPublisher()
     }
 }

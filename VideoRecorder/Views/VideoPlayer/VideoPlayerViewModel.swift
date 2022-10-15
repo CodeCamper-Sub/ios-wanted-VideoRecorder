@@ -81,7 +81,7 @@ class VideoPlayerViewModel {
     func bind() {
         $metaData
             .compactMap { $0.videoPath }
-            .flatMap { FirebaseManager.shared.getVideoIfNeeded($0) }
+            .flatMap { VideoManager.shared.getVideoIfNeeded($0) }
             .sink(receiveCompletion: { _ in },
                   receiveValue: { [weak self] url in
                 guard let self else { return }

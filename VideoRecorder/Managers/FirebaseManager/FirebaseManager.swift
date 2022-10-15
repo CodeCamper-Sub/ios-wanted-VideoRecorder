@@ -26,7 +26,7 @@ protocol FirebaseManagerProtocol {
     /// - Parameters:
     ///   - url: 영상이 저장될 로컬 URL입니다.
     ///   - completion: 영상 다운로드가 완료된 후, 실행되는 completion입니다.
-    func getVideoIfNeeded(_ url: URL, completion: @escaping (Result<URL, Error>) -> ())
+    func getVideo(_ url: URL, completion: @escaping (Result<URL, Error>) -> ())
 }
 
 class FirebaseManager: FirebaseManagerProtocol {
@@ -60,11 +60,7 @@ class FirebaseManager: FirebaseManagerProtocol {
         }
     }
     
-    func getVideoIfNeeded(_ url: URL, completion: @escaping (Result<URL, Error>) -> ()) {
-        if FileManager.default.fileExists(atPath: url.relativePath) {
-            completion(.success(url))
-            return
-        }
+    func getVideo(_ url: URL, completion: @escaping (Result<URL, Error>) -> ()) {
         DispatchQueue.global().async {
             let fileRef = self.storage.reference().child(url.lastPathComponent)
             fileRef.write(toFile: url, completion: { firebaseUrl, error in
@@ -85,18 +81,3 @@ class FirebaseManager: FirebaseManagerProtocol {
         }
     }
 }
-
-
-// MARK: Combine Extension
-extension FirebaseManager {
-    func getVideoIfNeeded(_ url: URL) -> AnyPublisher<URL, Error> {
-        return Future { promise in
-            self.getVideoIfNeeded(url) { result in
-                promise(result)
-            }
-        }.eraseToAnyPublisher()
-    }
-}
-
-
-
